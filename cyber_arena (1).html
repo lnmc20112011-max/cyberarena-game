@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>CYBER ARENA</title>
+<style>
+:root{
+  --bg:#07070f; --panel:#0d1120; --panel2:#131a30; --line:#2a3358;
+  --cyan:#39f6d0; --magenta:#ff2fa0; --gold:#ffc94a; --diamond:#5fd0ff;
+  --red:#ff4d5e; --text:#dfe6ff; --dim:#7c88b8;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+html,body{margin:0; padding:0; width:100%; height:100%; background:var(--bg); color:var(--text);
+  font-family:'Consolas','Courier New',monospace; overflow:hidden;}
+.hidden{display:none !important;}
+#app{position:fixed; inset:0; width:100vw; height:100vh; overflow:hidden;}
+
+/* ---------- LOADING ---------- */
+#loading{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:radial-gradient(ellipse at center, #101830 0%, #05050c 80%); z-index:100;}
+#loading h1{font-size:clamp(2.2em,7vw,4em); letter-spacing:.15em; margin:0;
+  color:var(--cyan); text-shadow:0 0 12px var(--cyan), 0 0 34px var(--magenta);}
+#loading .sub{color:var(--magenta); margin-top:6px; letter-spacing:.3em; font-size:.85em;}
+#loading .credit{margin-top:26px; color:var(--dim); font-size:.95em;}
+#loading .credit b{color:var(--gold);}
+#loadbar{width:min(420px,70vw); height:10px; background:#141a30; border:1px solid var(--line); margin-top:24px; border-radius:6px; overflow:hidden;}
+#loadfill{height:100%; width:0%; background:linear-gradient(90deg,var(--cyan),var(--magenta)); transition:width .1s linear;}
+#loadtip{margin-top:14px; color:var(--dim); font-size:.8em;}
+
+/* ---------- COMMON PANEL ---------- */
+.screen{position:absolute; inset:0; z-index:20; display:flex; flex-direction:column; align-items:center;
+  background:linear-gradient(180deg,#090c18,#05060d); overflow-y:auto; padding:14px;}
+.topbar{width:100%; max-width:1000px; display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+.title{font-size:clamp(1.3em,4vw,2em); color:var(--cyan); text-shadow:0 0 10px var(--cyan); letter-spacing:.08em;}
+.currency{display:flex; gap:14px; font-size:.95em;}
+.cur{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:6px 12px;}
+.cur.gold{color:var(--gold);} .cur.dia{color:var(--diamond);}
+.btn{background:var(--panel2); border:1px solid var(--line); color:var(--text); padding:10px 18px; border-radius:10px;
+  cursor:pointer; font-family:inherit; font-size:1em; letter-spacing:.03em; transition:.15s;}
+.btn:hover{border-color:var(--cyan); box-shadow:0 0 10px rgba(57,246,208,.35);}
+.btn.primary{background:linear-gradient(135deg,var(--cyan),#1c8f7c); color:#04140f; font-weight:bold; border:none;}
+.btn.danger{border-color:var(--red); color:var(--red);}
+.btn.small{padding:5px 10px; font-size:.8em;}
+.key{display:inline-block; background:#000; border:1px solid var(--cyan); color:var(--cyan); border-radius:4px;
+  padding:0 6px; margin-right:6px; font-size:.75em;}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; position:relative;}
+.grid{display:grid; gap:12px; width:100%; max-width:1000px;}
+
+/* ---------- MAIN MENU ---------- */
+#mainMenu .menuBtns{display:flex; flex-direction:column; gap:14px; margin-top:6vh; width:min(360px,86vw);}
+#mainMenu .menuBtns .btn{font-size:1.15em; padding:16px;}
+#helpIcon{position:absolute; top:14px; right:14px; width:38px; height:38px; border-radius:50%; background:var(--panel2);
+  border:1px solid var(--cyan); color:var(--cyan); font-weight:bold; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; z-index:5;}
+#cheatBox{position:absolute; bottom:12px; left:12px; display:flex; gap:6px; align-items:center;}
+#cheatBox input{background:#000; border:1px solid var(--line); color:var(--gold); padding:6px 8px; border-radius:6px; width:170px; font-family:inherit;}
+#logo{margin-top:6vh; text-align:center;}
+#logo .t1{font-size:clamp(2em,8vw,3.4em); color:var(--cyan); text-shadow:0 0 14px var(--cyan);}
+#logo .t2{color:var(--magenta); letter-spacing:.3em; font-size:.9em;}
+
+/* ---------- MAP / STAGE SELECT ---------- */
+.mapTabs{display:flex; gap:8px; margin-bottom:10px;}
+.mapTab{padding:8px 14px; border-radius:8px; border:1px solid var(--line); cursor:pointer; background:var(--panel2);}
+.mapTab.active{border-color:var(--cyan); color:var(--cyan);}
+#stageGrid{display:grid; grid-template-columns:repeat(6,1fr); gap:8px; width:100%; max-width:640px;}
+.stageCell{aspect-ratio:1; background:var(--panel); border:1px solid var(--line); border-radius:8px;
+  display:flex; align-items:center; justify-content:center; font-size:1em; cursor:pointer; position:relative;}
+.stageCell.locked{opacity:.35; cursor:not-allowed;}
+.stageCell.boss{border-color:var(--red); color:var(--red);}
+.stageCell.ck::after{content:'★'; position:absolute; top:1px; right:3px; font-size:.6em; color:var(--gold);}
+.stageCell.done{border-color:var(--cyan);}
+
+/* ---------- CHAR SELECT / SHOP ---------- */
+.tabs{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; justify-content:center;}
+.tabs .btn.active{border-color:var(--magenta); color:var(--magenta); box-shadow:0 0 10px rgba(255,47,160,.35);}
+.charGrid,.itemGrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+.avatar{width:100%; aspect-ratio:1; border-radius:10px; margin-bottom:6px;}
+.statRow{display:flex; justify-content:space-between; font-size:.72em; color:var(--dim);}
+.rarity{position:absolute; top:8px; left:8px; font-size:.65em; padding:2px 6px; border-radius:5px;}
+.r-common{background:#3a4160; color:#c9d0ff;} .r-rare{background:#1d4d7a;color:#8fe3ff;}
+.r-epic{background:#5a1d7a;color:#e3a8ff;} .r-legend{background:#7a5a1d;color:#ffe38f;}
+.ownedTag{position:absolute; top:8px; right:8px; font-size:.65em; color:var(--cyan);}
+.equipTag{position:absolute; bottom:8px; right:8px; font-size:.65em; color:var(--gold);}
+
+/* ---------- GAME ---------- */
+#gameScreen{position:absolute; inset:0; z-index:10; background:#000;}
+#gameCanvas{position:absolute; inset:0; width:100%; height:100%;}
+#hud{position:absolute; inset:0; pointer-events:none; z-index:11;}
+#hudTop{position:absolute; top:8px; left:8px; right:8px; display:flex; justify-content:space-between; align-items:flex-start;}
+#barsWrap{width:220px;}
+.barBG{height:14px; background:#000a; border:1px solid #333; border-radius:5px; margin-bottom:4px; overflow:hidden;}
+#hpFill{height:100%; width:100%; background:linear-gradient(90deg,#ff4d5e,#ff8b4d);}
+#mpFill{height:100%; width:100%; background:linear-gradient(90deg,#3a9bff,#39f6d0);}
+#stageInfo{color:var(--dim); font-size:.8em; text-align:right;}
+#skillBar{position:absolute; bottom:14px; left:50%; transform:translateX(-50%); display:flex; gap:10px; pointer-events:auto;}
+.skillBtn{width:56px; height:56px; border-radius:50%; background:var(--panel); border:2px solid var(--line);
+  color:var(--text); display:flex; align-items:center; justify-content:center; position:relative; cursor:pointer;}
+.skillBtn .cd{position:absolute; inset:0; border-radius:50%; background:#000a; display:flex; align-items:center; justify-content:center; font-size:.85em;}
+#joystickZone{position:absolute; left:20px; bottom:20px; width:130px; height:130px; border-radius:50%; background:#ffffff10; border:1px solid #ffffff30; pointer-events:auto;}
+#joyStick{position:absolute; width:54px; height:54px; border-radius:50%; background:#39f6d055; border:1px solid var(--cyan); left:38px; top:38px;}
+#aimZone{position:absolute; right:20px; bottom:20px; width:130px; height:130px; border-radius:50%; background:#ff2fa010; border:1px solid #ff2fa030; pointer-events:auto;}
+#aimStick{position:absolute; width:54px; height:54px; border-radius:50%; background:#ff2fa055; border:1px solid var(--magenta); left:38px; top:38px;}
+.desktopOnly{display:none;}
+.mobileOnly{display:none;}
+#toast{position:absolute; top:60px; left:50%; transform:translateX(-50%); background:#000c; border:1px solid var(--cyan);
+  color:var(--cyan); padding:8px 16px; border-radius:8px; z-index:60; font-size:.9em;}
+#pauseBtn{position:absolute; top:8px; left:50%; transform:translateX(-50%); pointer-events:auto; background:#000a;
+  border:1px solid var(--line); color:var(--text); border-radius:8px; padding:4px 12px; cursor:pointer;}
+#upgradeScreen,#pauseScreen,#gameOverScreen,#stageClearScreen{position:absolute; inset:0; z-index:40; background:#000c;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;}
+.upgradeCards{display:flex; gap:16px; flex-wrap:wrap; justify-content:center;}
+.uCard{width:180px; background:var(--panel); border:1px solid var(--cyan); border-radius:12px; padding:16px; text-align:center; cursor:pointer;}
+.uCard:hover{box-shadow:0 0 16px var(--cyan);}
+
+@media (pointer:fine) and (hover:hover){ .desktopOnly{display:block;} #joystickZone,#aimZone{display:none;} }
+@media (pointer:coarse), (hover:none){ .mobileOnly{display:block;} }
+@media (max-width:820px){
+  .stageCell{font-size:.8em;}
+  #stageGrid{grid-template-columns:repeat(5,1fr);}
+}
+#modalBG{position:absolute; inset:0; background:#000b; z-index:80; display:flex; align-items:center; justify-content:center; padding:16px;}
+#modalBox{background:var(--panel); border:1px solid var(--cyan); border-radius:14px; padding:20px; max-width:640px; max-height:82vh; overflow-y:auto;}
+#modalBox h2{color:var(--cyan); margin-top:0;}
+#modalBox p, #modalBox li{color:var(--text); line-height:1.5em; font-size:.92em;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- LOADING -->
+  <div id="loading">
+    <div id="logo">
+      <div class="t1">CYBER ARENA</div>
+      <div class="t2">TOP-DOWN COMBAT PROTOCOL</div>
+    </div>
+    <div class="credit">Game được tạo bởi <b>cuongdz</b></div>
+    <div id="loadbar"><div id="loadfill"></div></div>
+    <div id="loadtip">Đang khởi tạo hệ thống chiến đấu...</div>
+  </div>
+
+  <!-- MAIN MENU -->
+  <div id="mainMenu" class="screen hidden">
+    <div id="helpIcon" onclick="openHelp()">?</div>
+    <div class="currency" style="position:absolute; top:14px; left:14px;">
+      <div class="cur gold">💰 <span id="goldMenu">0</span></div>
+      <div class="cur dia">💎 <span id="diaMenu">0</span></div>
+    </div>
+    <div id="logo"><div class="t1" style="font-size:clamp(1.8em,7vw,3em)">CYBER ARENA</div>
+      <div class="t2">TOP-DOWN COMBAT PROTOCOL</div></div>
+    <div class="menuBtns">
+      <button class="btn primary" onclick="openMapSelect()"><span class="key desktopOnly">P</span>CHƠI</button>
+      <button class="btn" onclick="openShop()"><span class="key desktopOnly">S</span>CỬA HÀNG</button>
+      <button class="btn" onclick="openDaily()"><span class="key desktopOnly">D</span>NHIỆM VỤ HẰNG NGÀY</button>
+      <button class="btn" onclick="openCharSelect('loadout')"><span class="key desktopOnly">C</span>NHÂN VẬT & TRANG BỊ</button>
+    </div>
+    <div id="cheatBox">
+      <input id="cheatInput" placeholder="Nhập mã..." maxlength="24">
+      <button class="btn small" onclick="tryCheat()">Kích hoạt</button>
+    </div>
+  </div>
+
+  <!-- MAP SELECT -->
+  <div id="mapScreen" class="screen hidden">
+    <div class="topbar">
+      <button class="btn small" onclick="showScreen('mainMenu')">← Menu</button>
+      <div class="title">CHỌN MÀN CHƠI</div>
+      <div class="currency"><div class="cur gold">💰 <span id="goldMap">0</span></div><div class="cur dia">💎 <span id="diaMap">0</span></div></div>
+    </div>
+    <div class="mapTabs" id="mapTabs"></div>
+    <div id="stageGrid"></div>
+    <div style="margin-top:14px; color:var(--dim); font-size:.85em;">★ = mốc checkpoint (mỗi 5 màn) &nbsp;|&nbsp; Viền đỏ = Trùm (mỗi 10 màn)</div>
+  </div>
+
+  <!-- CHARACTER SELECT / LOADOUT -->
+  <div id="charScreen" class="screen hidden">
+    <div class="topbar">
+      <button class="btn small" onclick="backFromChar()">← Quay lại</button>
+      <div class="title">NHÂN VẬT & TRANG BỊ</div>
+      <div></div>
+    </div>
+    <div class="tabs">
+      <button class="btn tabbtn active" data-t="char" onclick="switchLoadoutTab('char')">Nhân vật</button>
+      <button class="btn tabbtn" data-t="weapon" onclick="switchLoadoutTab('weapon')">Vũ khí</button>
+      <button class="btn tabbtn" data-t="pet" onclick="switchLoadoutTab('pet')">Pet (tối đa 2)</button>
+      <button class="btn tabbtn" data-t="comp" onclick="switchLoadoutTab('comp')">Đồng đội (1)</button>
+    </div>
+    <div class="grid charGrid" id="loadoutGrid"></div>
+    <button class="btn primary" style="margin-top:16px;" onclick="confirmLoadoutStart()" id="startFromCharBtn">BẮT ĐẦU CHIẾN ĐẤU</button>
+  </div>
+
+  <!-- SHOP -->
+  <div id="shopScreen" class="screen hidden">
+    <div class="topbar">
+      <button class="btn small" onclick="showScreen('mainMenu')">← Menu</button>
+      <div class="title">CỬA HÀNG</div>
+      <div class="currency"><div class="cur gold">💰 <span id="goldShop">0</span></div><div class="cur dia">💎 <span id="diaShop">0</span></div></div>
+    </div>
+    <div class="tabs">
+      <button class="btn tabbtn active" data-t="char" onclick="switchShopTab('char')">Nhân vật</button>
+      <button class="btn tabbtn" data-t="weapon" onclick="switchShopTab('weapon')">Vũ khí</button>
+      <button class="btn tabbtn" data-t="item" onclick="switchShopTab('item')">Vật phẩm / Pet / Đồng đội</button>
+    </div>
+    <div class="grid itemGrid" id="shopGrid"></div>
+  </div>
+
+  <!-- DAILY MISSIONS -->
+  <div id="dailyScreen" class="screen hidden">
+    <div class="topbar">
+      <button class="btn small" onclick="showScreen('mainMenu')">← Menu</button>
+      <div class="title">NHIỆM VỤ HẰNG NGÀY</div>
+      <div></div>
+    </div>
+    <div class="grid" id="dailyGrid" style="grid-template-columns:1fr; max-width:520px;"></div>
+    <div class="card" style="margin-top:14px; max-width:520px; width:100%; text-align:center; border-color:var(--gold);">
+      <div style="color:var(--gold); font-weight:bold;">🏆 PHẦN THƯỞNG LỚN (hoàn thành tất cả)</div>
+      <div id="bigRewardText" style="margin:6px 0; color:var(--dim);"></div>
+      <button class="btn primary" id="claimBigBtn" onclick="claimBigReward()">Nhận thưởng</button>
+    </div>
+  </div>
+
+  <!-- HELP MODAL -->
+  <div id="modalBG" class="hidden">
+    <div id="modalBox">
+      <h2>Hướng dẫn chơi</h2>
+      <p><b>Mục tiêu:</b> Sống sót qua từng màn, tiêu diệt quái, thu thập vàng 💰 và kim cương 💎 để nâng cấp.</p>
+      <p><b>Điều khiển (Máy tính):</b></p>
+      <ul>
+        <li><span class="key">W A S D</span> Di chuyển</li>
+        <li><span class="key">Chuột</span> Ngắm & <span class="key">Click trái</span> Bắn</li>
+        <li><span class="key">Shift</span> hoặc <span class="key">Space</span> Lướt (Dash)</li>
+        <li><span class="key">Q</span> Chiêu cuối (Ultimate)</li>
+        <li><span class="key">E</span> Kỹ năng riêng của nhân vật</li>
+        <li><span class="key">Esc</span> Tạm dừng</li>
+      </ul>
+      <p><b>Điều khiển (Điện thoại):</b> Cần điều khiển bên trái để di chuyển, cần bên phải để ngắm/bắn, các nút kỹ năng ở dưới cùng.</p>
+      <p><b>Vật phẩm rơi trong màn:</b> Khiên (bất tử tạm thời), Tăng tốc, Tăng sát thương – xuất hiện ngẫu nhiên 1-2 lần mỗi màn.</p>
+      <p><b>Bản đồ:</b> 3 bản đồ lớn x 30 màn. Phải xong 30 màn mới mở bản đồ tiếp theo (khoá 🔒 nếu chưa đủ điều kiện). Checkpoint mỗi 5 màn. Trùm xuất hiện mỗi 10 màn.</p>
+      <p><b>Nâng cấp:</b> Sau mỗi màn thắng, chọn 1 trong 3 thẻ bổ trợ ngẫu nhiên (Sát thương / Hút máu / Giảm hồi chiêu).</p>
+      <button class="btn primary" onclick="closeHelp()" style="margin-top:10px;">Đã hiểu</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="gameScreen" class="screen hidden" style="padding:0;">
+    <canvas id="gameCanvas"></canvas>
+    <div id="hud">
+      <div id="hudTop">
+        <div id="barsWrap">
+          <div style="font-size:.8em; color:var(--cyan);" id="charNameHud">-</div>
+          <div class="barBG"><div id="hpFill"></div></div>
+          <div class="barBG"><div id="mpFill"></div></div>
+        </div>
+        <div id="stageInfo">-</div>
+      </div>
+      <button id="pauseBtn" onclick="pauseGame()">⏸ <span class="key desktopOnly" style="margin-left:4px;">Esc</span></button>
+      <div id="skillBar">
+        <div class="skillBtn desktopOnly" style="pointer-events:none;"><span class="key" style="position:static;">Shift</span></div>
+        <div class="skillBtn" id="btnDash" onclick="doDash()">DASH<div class="cd hidden" id="cdDash"></div></div>
+        <div class="skillBtn" id="btnSkill" onclick="doSkill()">E<div class="cd hidden" id="cdSkill"></div></div>
+        <div class="skillBtn" id="btnUlt" onclick="doUlt()">ULT<div class="cd hidden" id="cdUlt"></div></div>
+      </div>
+      <div id="joystickZone" class="mobileOnly"><div id="joyStick"></div></div>
+      <div id="aimZone" class="mobileOnly"><div id="aimStick"></div></div>
+    </div>
+    <div id="toast" class="hidden"></div>
+  </div>
+
+  <!-- UPGRADE / STAGE CLEAR / GAME OVER / PAUSE -->
+  <div id="upgradeScreen" class="screen hidden">
+    <div class="title">CHỌN NÂNG CẤP</div>
+    <div class="upgradeCards" id="upgradeCards"></div>
+  </div>
+  <div id="stageClearScreen" class="screen hidden">
+    <div class="title" style="color:var(--gold);">HOÀN THÀNH MÀN CHƠI!</div>
+    <div id="stageClearInfo" style="color:var(--dim);"></div>
+    <button class="btn primary" onclick="continueAfterClear()">Tiếp tục</button>
+  </div>
+  <div id="gameOverScreen" class="screen hidden">
+    <div class="title" style="color:var(--red);">BẠN ĐÃ GỤC NGÃ</div>
+    <div id="gameOverInfo" style="color:var(--dim);"></div>
+    <div style="display:flex; gap:12px;">
+      <button class="btn" onclick="retryStage()">Thử lại màn này</button>
+      <button class="btn primary" onclick="showScreen('mapScreen'); renderMapScreen();">Về bản đồ</button>
+    </div>
+  </div>
+  <div id="pauseScreen" class="screen hidden">
+    <div class="title">TẠM DỪNG</div>
+    <button class="btn primary" onclick="resumeGame()">Tiếp tục chơi</button>
+    <button class="btn" onclick="retryStage()">Chơi lại màn</button>
+    <button class="btn danger" onclick="quitToMenu()">Thoát về Menu</button>
+  </div>
+
+</div>
+
+<script>
+/* =====================================================================
+   CYBER ARENA — single-file top-down shooter
+   Author credit: cuongdz
+   ===================================================================== */
+
+/* ---------------- RNG (seeded, deterministic per stage) ---------------- */
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
+/* ---------------- SAVE DATA ---------------- */
+const DEFAULT_SAVE = {
+  gold:150, diamonds:5,
+  ownedChars:['c1'], ownedWeapons:['w1'], ownedPets:[], ownedComps:[], ownedItems:{},
+  equip:{char:'c1', weapon:'w1', pets:[], comp:null},
+  maps:{
+    m1:{unlocked:true, furthest:0, checkpoints:[0]},
+    m2:{unlocked:false, furthest:0, checkpoints:[0]},
+    m3:{unlocked:false, furthest:0, checkpoints:[0]},
+  },
+  daily:{date:'', missions:[], bigClaimed:false},
+  cheatUsed:false,
+  runBoosts:{dmg:0,hp:0,speed:0} // consumed potions applied to next run
+};
+let SAVE = loadSave();
+function loadSave(){
+  try{
+    const raw = localStorage.getItem('cyberArenaSave');
+    if(!raw) return JSON.parse(JSON.stringify(DEFAULT_SAVE));
+    const s = JSON.parse(raw);
+    return Object.assign(JSON.parse(JSON.stringify(DEFAULT_SAVE)), s);
+  }catch(e){ return JSON.parse(JSON.stringify(DEFAULT_SAVE)); }
+}
+function saveGame(){ localStorage.setItem('cyberArenaSave', JSON.stringify(SAVE)); }
+
+/* ---------------- CONTENT DATA ---------------- */
+// 8 characters (framework easily extendable to 20 by adding more entries)
+const CHARACTERS = [
+  {id:'c1', name:'Rin "Lưỡi Chớp"', color:'#39f6d0', hair:'#222', rarity:'common', price:0,
+    dmg:10, life:5, speed:230, hp:100, skillName:'Lam Sóng', skillDesc:'Bắn 1 tia năng lượng xuyên địch', skillCd:12},
+  {id:'c2', name:'Vex "Bóng Đêm"', color:'#ff2fa0', hair:'#111', rarity:'common', price:400,
+    dmg:12, life:8, speed:250, hp:90, skillName:'Ẩn Thân', skillDesc:'Tàng hình 2s, đòn tiếp theo chí mạng', skillCd:16},
+  {id:'c3', name:'Kado "Thép Nặng"', color:'#ffc94a', hair:'#3a2a1a', rarity:'rare', price:900,
+    dmg:14, life:4, speed:190, hp:150, skillName:'Khiên Chắn', skillDesc:'Dựng khiên chắn đạn 3s', skillCd:20},
+  {id:'c4', name:'Nyx "Tia Chớp"', color:'#5fd0ff', hair:'#0a1a2a', rarity:'rare', price:900,
+    dmg:9, life:5, speed:280, hp:95, skillName:'Cuồng Tốc', skillDesc:'Tăng 60% tốc độ đánh trong 4s', skillCd:18},
+  {id:'c5', name:'Sable "Hắc Diệm"', color:'#a24bff', hair:'#000', rarity:'epic', price:1600,
+    dmg:18, life:12, speed:220, hp:110, skillName:'Nổ Ám Ảnh', skillDesc:'Nổ diện rộng quanh nhân vật', skillCd:22},
+  {id:'c6', name:'Iris "Hoa Cương"', color:'#ff7a4d', hair:'#5a1a0a', rarity:'epic', price:1600,
+    dmg:11, life:6, speed:235, hp:120, skillName:'Gai Độc', skillDesc:'Rải gai độc gây sát thương theo thời gian', skillCd:14},
+  {id:'c7', name:'Zael "Thần Sấm"', color:'#4dfaff', hair:'#001', rarity:'legend', price:0, diaPrice:120,
+    dmg:16, life:10, speed:245, hp:130, skillName:'Sấm Sét', skillDesc:'Sét đánh 3 mục tiêu gần nhất', skillCd:20},
+  {id:'c8', name:'Morrigan "Tử Thần"', color:'#ff4d5e', hair:'#200', rarity:'legend', price:0, diaPrice:150,
+    dmg:20, life:15, speed:210, hp:100, skillName:'Hồi Sinh', skillDesc:'Hồi 30% máu tối đa tức thì', skillCd:26},
+];
+
+// 10 weapons (extendable to 30)
+const WEAPONS = [
+  {id:'w1', name:'Súng Lục Cơ Bản', color:'#8fa0c8', rarity:'common', price:0, dmg:8, rate:0.35, spread:0.04, bulletSpeed:640},
+  {id:'w2', name:'Tiểu Liên Xung Điện', color:'#39f6d0', rarity:'common', price:300, dmg:5, rate:0.12, spread:0.09, bulletSpeed:700},
+  {id:'w3', name:'Shotgun Plasma', color:'#ffc94a', rarity:'rare', price:750, dmg:6, rate:0.55, spread:0.28, pellets:5, bulletSpeed:560},
+  {id:'w4', name:'Súng Bắn Tỉa Quang', color:'#5fd0ff', rarity:'rare', price:850, dmg:34, rate:0.9, spread:0.01, bulletSpeed:1100},
+  {id:'w5', name:'Súng Phóng Từ', color:'#ff2fa0', rarity:'rare', price:800, dmg:12, rate:0.3, spread:0.06, bulletSpeed:620, pierce:2},
+  {id:'w6', name:'Đại Bác Năng Lượng', color:'#a24bff', rarity:'epic', price:1500, dmg:26, rate:0.5, spread:0.05, bulletSpeed:600, splash:60},
+  {id:'w7', name:'Súng Cắt Laser', color:'#ff7a4d', rarity:'epic', price:1500, dmg:9, rate:0.08, spread:0.02, bulletSpeed:900},
+  {id:'w8', name:'Nỏ Băng Tự Động', color:'#8fe3ff', rarity:'epic', price:1450, dmg:13, rate:0.25, spread:0.05, bulletSpeed:650, slow:true},
+  {id:'w9', name:'Vũ Khí Hư Không', color:'#4dfaff', rarity:'legend', price:0, diaPrice:140, dmg:22, rate:0.15, spread:0.05, bulletSpeed:800, pierce:3},
+  {id:'w10', name:'Thần Khí Tận Thế', color:'#ff4d5e', rarity:'legend', price:0, diaPrice:220, dmg:40, rate:0.6, spread:0.03, bulletSpeed:950, splash:90},
+];
+
+const ITEMS = [
+  {id:'i1', name:'Lọ Sức Mạnh', rarity:'common', price:120, kind:'potion', stat:'dmg', val:0.15, desc:'+15% sát thương màn tiếp theo'},
+  {id:'i2', name:'Lọ Sinh Lực', rarity:'common', price:120, kind:'potion', stat:'hp', val:0.2, desc:'+20% máu tối đa màn tiếp theo'},
+  {id:'i3', name:'Lọ Cuồng Tốc', rarity:'rare', price:260, diaPrice:0, kind:'potion', stat:'speed', val:0.2, desc:'+20% tốc độ màn tiếp theo'},
+  {id:'i4', name:'Lọ Hút Máu', rarity:'rare', price:0, diaPrice:8, kind:'potion', stat:'life', val:0.1, desc:'+10% hút máu màn tiếp theo'},
+  {id:'i5', name:'Lọ Đại Cường', rarity:'epic', price:0, diaPrice:15, kind:'potion', stat:'dmg', val:0.35, desc:'+35% sát thương màn tiếp theo'},
+];
+const PETS = [
+  {id:'p1', name:'Drone Hộ Vệ', rarity:'rare', price:600, kind:'pet', desc:'Tự động bắn quái gần nhất', dmg:6, rate:0.9},
+  {id:'p2', name:'Cú Điện Tử', rarity:'rare', price:0, diaPrice:20, kind:'pet', desc:'Đánh dấu mục tiêu, +10% sát thương lên nó', dmg:0},
+  {id:'p3', name:'Rắn Nano', rarity:'epic', price:1100, kind:'pet', desc:'Cắn độc quái ở gần bạn', dmg:4, poison:true},
+  {id:'p4', name:'Cầu Khiên', rarity:'epic', price:0, diaPrice:28, kind:'pet', desc:'Hồi máu nhỏ theo thời gian', heal:1.5},
+  {id:'p5', name:'Thú Sấm', rarity:'legend', price:0, diaPrice:60, kind:'pet', desc:'Thỉnh thoảng gọi sét đánh quái', dmg:14},
+];
+const COMPANIONS = [
+  {id:'a1', name:'Đồng Đội Tuyến Đầu', rarity:'rare', price:900, kind:'comp', hp:80, dmg:9, desc:'Đồng đội cận chiến, chắn đòn hộ bạn'},
+  {id:'a2', name:'Đồng Đội Xạ Thủ', rarity:'epic', price:0, diaPrice:35, hp:60, dmg:14, desc:'Đồng đội tầm xa, hỗ trợ hoả lực', kind:'comp'},
+  {id:'a3', name:'Đồng Đội Hỗ Trợ', rarity:'epic', price:0, diaPrice:35, hp:70, dmg:5, heal:2, kind:'comp', desc:'Hồi máu định kỳ cho bạn'},
+];
+
+const MAP_DEFS = [
+  {id:'m1', name:'Vùng Đất Xanh', theme:'grass', bg:'#16210f', wall:'#5a4a2f', deco:'#3d6b2f', enemyColor:'#8fc45a'},
+  {id:'m2', name:'Sa Mạc Cháy', theme:'desert', bg:'#2a1e0c', wall:'#c9a15a', deco:'#7a4a1a', enemyColor:'#e0a83f'},
+  {id:'m3', name:'Vực Obsidian', theme:'obsidian', bg:'#150a1e', wall:'#3a1a4a', deco:'#8a2fbf', enemyColor:'#c04dff'},
+];
+const STAGES_PER_MAP = 30;
+
+/* ---------------- UTIL ---------------- */
+function fmt(n){ return Math.floor(n).toLocaleString('vi-VN'); }
+function toast(msg, ms=1800){
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.add('hidden'), ms);
+}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+function rarityClass(r){ return {common:'r-common',rare:'r-rare',epic:'r-epic',legend:'r-legend'}[r]||'r-common'; }
+function rarityLabel(r){ return {common:'THƯỜNG',rare:'HIẾM',epic:'SỬ THI',legend:'HUYỀN THOẠI'}[r]||''; }
+
+function refreshCurrencyDisplays(){
+  ['Menu','Map','Shop'].forEach(k=>{
+    const g = document.getElementById('gold'+k), d = document.getElementById('dia'+k);
+    if(g) g.textContent = fmt(SAVE.gold); if(d) d.textContent = fmt(SAVE.diamonds);
+  });
+}
+
+/* ---------------- LOADING SEQUENCE ---------------- */
+window.addEventListener('load', ()=>{
+  const fill = document.getElementById('loadfill');
+  const tips = ['Đang nạp vũ khí...','Đang dựng bản đồ chiến trường...','Đang hiệu chỉnh AI kẻ địch...','Sẵn sàng chiến đấu!'];
+  let p = 0;
+  const iv = setInterval(()=>{
+    p += 100/30; // ~3s
+    fill.style.width = Math.min(100,p) + '%';
+    document.getElementById('loadtip').textContent = tips[Math.min(tips.length-1, Math.floor(p/100*tips.length))];
+    if(p>=100){
+      clearInterval(iv);
+      setTimeout(()=>{
+        document.getElementById('loading').classList.add('hidden');
+        showScreen('mainMenu');
+        refreshCurrencyDisplays();
+        document.getElementById('goldMenu').textContent = fmt(SAVE.gold);
+        document.getElementById('diaMenu').textContent = fmt(SAVE.diamonds);
+        rollDailyIfNeeded();
+      }, 250);
+    }
+  }, 100);
+});
+
+/* ---------------- CHEAT CODE ---------------- */
+function tryCheat(){
+  const v = document.getElementById('cheatInput').value.trim();
+  if(v === 'cuongdz20112011'){
+    CHARACTERS.forEach(c=>{ if(!SAVE.ownedChars.includes(c.id)) SAVE.ownedChars.push(c.id); });
+    WEAPONS.forEach(w=>{ if(!SAVE.ownedWeapons.includes(w.id)) SAVE.ownedWeapons.push(w.id); });
+    PETS.forEach(p=>{ if(!SAVE.ownedPets.includes(p.id)) SAVE.ownedPets.push(p.id); });
+    COMPANIONS.forEach(c=>{ if(!SAVE.ownedComps.includes(c.id)) SAVE.ownedComps.push(c.id); });
+    ITEMS.forEach(i=>{ SAVE.ownedItems[i.id] = (SAVE.ownedItems[i.id]||0) + 5; });
+    SAVE.gold += 50000; SAVE.diamonds += 2000;
+    SAVE.cheatUsed = true; saveGame();
+    toast('MÃ ADMIN KÍCH HOẠT — Miễn phí toàn bộ vật phẩm!', 3000);
+    refreshCurrencyDisplays();
+    document.getElementById('goldMenu').textContent = fmt(SAVE.gold);
+    document.getElementById('diaMenu').textContent = fmt(SAVE.diamonds);
+  } else {
+    toast('Mã không hợp lệ');
+  }
+  document.getElementById('cheatInput').value = '';
+}
+
+/* ---------------- HELP MODAL ---------------- */
+function openHelp(){ document.getElementById('modalBG').classList.remove('hidden'); }
+function closeHelp(){ document.getElementById('modalBG').classList.add('hidden'); }
+
+/* ---------------- MAP SELECT ---------------- */
+let currentMapTab = 'm1';
+function openMapSelect(){ showScreen('mapScreen'); renderMapScreen(); }
+function renderMapScreen(){
+  refreshCurrencyDisplays();
+  const tabs = document.getElementById('mapTabs'); tabs.innerHTML = '';
+  MAP_DEFS.forEach(m=>{
+    const unlocked = SAVE.maps[m.id].unlocked;
+    const el = document.createElement('div');
+    el.className = 'mapTab' + (m.id===currentMapTab?' active':'');
+    el.textContent = (unlocked?'':'🔒 ') + m.name;
+    el.onclick = ()=>{ if(!unlocked){ toast('Hoàn thành bản đồ trước để mở khoá!'); return;} currentMapTab = m.id; renderMapScreen(); };
+    tabs.appendChild(el);
+  });
+  const grid = document.getElementById('stageGrid'); grid.innerHTML = '';
+  const mstate = SAVE.maps[currentMapTab];
+  for(let i=1;i<=STAGES_PER_MAP;i++){
+    const cell = document.createElement('div');
+    const isBoss = i % 10 === 0;
+    const isCk = i % 5 === 0;
+    const unlockedStage = mstate.unlocked && (i <= mstate.furthest + 1);
+    cell.className = 'stageCell' + (unlockedStage?'':' locked') + (isBoss?' boss':'') + (isCk?' ck':'') + (i<=mstate.furthest?' done':'');
+    cell.textContent = isBoss ? ('👑'+i) : i;
+    if(unlockedStage){
+      cell.onclick = ()=>startStageFlow(currentMapTab, i);
+    }
+    grid.appendChild(cell);
+  }
+}
+
+/* ---------------- LOADOUT / CHAR SELECT ---------------- */
+let loadoutTab = 'char';
+let pendingStage = null; // {map, stage} set when coming from map select
+function openCharSelect(from){ pendingStage = from==='loadout' ? null : from; showScreen('charScreen'); loadoutTab='char'; renderLoadout(); }
+function backFromChar(){ if(pendingStage){ showScreen('mapScreen'); renderMapScreen(); } else { showScreen('mainMenu'); } }
+function switchLoadoutTab(t){ loadoutTab = t; document.querySelectorAll('#charScreen .tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.t===t)); renderLoadout(); }
+
+function renderLoadout(){
+  const grid = document.getElementById('loadoutGrid'); grid.innerHTML='';
+  document.getElementById('startFromCharBtn').style.display = pendingStage ? 'block':'none';
+  let list, ownedList, equipCheck, onPick;
+  if(loadoutTab==='char'){
+    list = CHARACTERS; ownedList = SAVE.ownedChars;
+    onPick = (id)=>{ if(!ownedList.includes(id)){ toast('Chưa sở hữu — mua ở Cửa hàng'); return;} SAVE.equip.char = id; saveGame(); renderLoadout(); };
+    equipCheck = (id)=> SAVE.equip.char===id;
+  } else if(loadoutTab==='weapon'){
+    list = WEAPONS; ownedList = SAVE.ownedWeapons;
+    onPick = (id)=>{ if(!ownedList.includes(id)){ toast('Chưa sở hữu — mua ở Cửa hàng'); return;} SAVE.equip.weapon = id; saveGame(); renderLoadout(); };
+    equipCheck = (id)=> SAVE.equip.weapon===id;
+  } else if(loadoutTab==='pet'){
+    list = PETS; ownedList = SAVE.ownedPets;
+    onPick = (id)=>{
+      if(!ownedList.includes(id)){ toast('Chưa sở hữu — mua ở Cửa hàng'); return;}
+      const idx = SAVE.equip.pets.indexOf(id);
+      if(idx>=0) SAVE.equip.pets.splice(idx,1);
+      else { if(SAVE.equip.pets.length>=2){ toast('Chỉ trang bị tối đa 2 pet'); return;} SAVE.equip.pets.push(id); }
+      saveGame(); renderLoadout();
+    };
+    equipCheck = (id)=> SAVE.equip.pets.includes(id);
+  } else {
+    list = COMPANIONS; ownedList = SAVE.ownedComps;
+    onPick = (id)=>{ if(!ownedList.includes(id)){ toast('Chưa sở hữu — mua ở Cửa hàng'); return;} SAVE.equip.comp = (SAVE.equip.comp===id?null:id); saveGame(); renderLoadout(); };
+    equipCheck = (id)=> SAVE.equip.comp===id;
+  }
+  list.forEach(item=>{
+    const owned = ownedList.includes(item.id);
+    const card = document.createElement('div');
+    card.className = 'card';
+    const av = document.createElement('div');
+    av.className = 'avatar';
+    av.style.background = item.color ? `radial-gradient(circle at 35% 30%, ${item.color}, #05060d 75%)` : `radial-gradient(circle at 35% 30%, ${item.enemyColor||'#888'}, #05060d 75%)`;
+    card.appendChild(av);
+    const r = document.createElement('div'); r.className='rarity '+rarityClass(item.rarity); r.textContent = rarityLabel(item.rarity); card.appendChild(r);
+    if(owned){ const o=document.createElement('div'); o.className='ownedTag'; o.textContent='✔ sở hữu'; card.appendChild(o); }
+    if(equipCheck(item.id)){ const e=document.createElement('div'); e.className='equipTag'; e.textContent='ĐANG DÙNG'; card.appendChild(e); }
+    const name = document.createElement('div'); name.style.fontWeight='bold'; name.textContent = item.name; card.appendChild(name);
+    const desc = document.createElement('div'); desc.style.fontSize='.72em'; desc.style.color='var(--dim)';
+    desc.textContent = item.skillDesc || item.desc || '';
+    card.appendChild(desc);
+    if(item.dmg!==undefined){
+      const stats = document.createElement('div'); stats.className='statRow';
+      stats.innerHTML = `<span>DMG ${item.dmg}</span><span>${item.hp?('HP '+item.hp):''}</span>`;
+      card.appendChild(stats);
+    }
+    card.style.cursor='pointer';
+    card.onclick = ()=>onPick(item.id);
+    grid.appendChild(card);
+  });
+}
+function confirmLoadoutStart(){
+  if(!pendingStage){ return; }
+  showScreen('gameScreen');
+  initRun(pendingStage.map, pendingStage.stage);
+}
+function startStageFlow(map, stage){
+  if(!SAVE.ownedChars.includes(SAVE.equip.char) || !SAVE.ownedWeapons.includes(SAVE.equip.weapon)){
+    toast('Trang bị đang chọn không hợp lệ — mở "Nhân vật & Trang bị" để chọn lại');
+    openCharSelect({map, stage});
+    return;
+  }
+  showScreen('gameScreen');
+  initRun(map, stage);
+}
+
+/* ---------------- SHOP ---------------- */
+let shopTab = 'char';
+function openShop(){ showScreen('shopScreen'); shopTab='char'; document.querySelectorAll('#shopScreen .tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.t==='char')); renderShop(); }
+function switchShopTab(t){ shopTab=t; document.querySelectorAll('#shopScreen .tabbtn').forEach(b=>b.classList.toggle('active', b.dataset.t===t)); renderShop(); }
+
+function buy(kind, item){
+  const ownedListMap = {char:'ownedChars', weapon:'ownedWeapons', pet:'ownedPets', comp:'ownedComps'};
+  if(kind==='potion'){
+    const cost = item.price || 0, dcost = item.diaPrice || 0;
+    if(cost>0 && SAVE.gold<cost){ toast('Không đủ vàng!'); return; }
+    if(dcost>0 && SAVE.diamonds<dcost){ toast('Không đủ kim cương!'); return; }
+    SAVE.gold -= cost; SAVE.diamonds -= dcost;
+    SAVE.ownedItems[item.id] = (SAVE.ownedItems[item.id]||0)+1;
+    toast('Đã mua ' + item.name);
+  } else {
+    const key = ownedListMap[kind];
+    if(SAVE[key].includes(item.id)){ toast('Bạn đã sở hữu vật phẩm này'); return; }
+    const cost = item.price||0, dcost = item.diaPrice||0;
+    if(cost>0 && SAVE.gold<cost){ toast('Không đủ vàng!'); return; }
+    if(dcost>0 && SAVE.diamonds<dcost){ toast('Không đủ kim cương!'); return; }
+    SAVE.gold -= cost; SAVE.diamonds -= dcost;
+    SAVE[key].push(item.id);
+    toast('Đã mua ' + item.name + '!');
+  }
+  saveGame(); refreshCurrencyDisplays(); renderShop();
+}
+
+function renderShop(){
+  refreshCurrencyDisplays();
+  const grid = document.getElementById('shopGrid'); grid.innerHTML='';
+  let list, kind;
+  if(shopTab==='char'){ list=CHARACTERS; kind='char'; }
+  else if(shopTab==='weapon'){ list=WEAPONS; kind='weapon'; }
+  else { list = [...ITEMS.map(i=>({...i,kind:'potion'})), ...PETS.map(i=>({...i,kind:'pet'})), ...COMPANIONS.map(i=>({...i,kind:'comp'}))]; }
+
+  list.forEach(item=>{
+    const ownedListMap = {char:SAVE.ownedChars, weapon:SAVE.ownedWeapons, pet:SAVE.ownedPets, comp:SAVE.ownedComps};
+    const kk = item.kind || kind;
+    const owned = kk==='potion' ? false : (ownedListMap[kk]||[]).includes(item.id);
+    const card = document.createElement('div'); card.className='card';
+    const av = document.createElement('div'); av.className='avatar';
+    av.style.background = `radial-gradient(circle at 35% 30%, ${item.color||'#7a5aff'}, #05060d 75%)`;
+    card.appendChild(av);
+    const r = document.createElement('div'); r.className='rarity '+rarityClass(item.rarity); r.textContent=rarityLabel(item.rarity); card.appendChild(r);
+    if(owned){ const o=document.createElement('div'); o.className='ownedTag'; o.textContent='✔ sở hữu'; card.appendChild(o); }
+    const name=document.createElement('div'); name.style.fontWeight='bold'; name.textContent=item.name; card.appendChild(name);
+    const desc=document.createElement('div'); desc.style.fontSize='.72em'; desc.style.color='var(--dim)';
+    desc.textContent = item.skillDesc || item.desc || '';
+    card.appendChild(desc);
+    const priceRow=document.createElement('div'); priceRow.style.marginTop='8px'; priceRow.style.display='flex'; priceRow.style.justifyContent='space-between'; priceRow.style.alignItems='center';
+    const priceText=document.createElement('span');
+    if(kk==='potion'){
+      priceText.innerHTML = item.diaPrice ? `💎 ${item.diaPrice}` : `💰 ${fmt(item.price)}`;
+      priceText.style.color = item.diaPrice?'var(--diamond)':'var(--gold)';
+      const owned_n = SAVE.ownedItems[item.id]||0;
+      const cnt=document.createElement('span'); cnt.style.fontSize='.7em'; cnt.style.color='var(--dim)'; cnt.textContent='x'+owned_n;
+      priceRow.appendChild(cnt);
+    } else {
+      priceText.innerHTML = owned ? '' : (item.diaPrice ? `💎 ${item.diaPrice}` : `💰 ${fmt(item.price)}`);
+      priceText.style.color = item.diaPrice?'var(--diamond)':'var(--gold)';
+    }
+    priceRow.appendChild(priceText);
+    card.appendChild(priceRow);
+    const buyBtn=document.createElement('button');
+    buyBtn.className='btn small primary'; buyBtn.style.marginTop='8px'; buyBtn.style.width='100%';
+    buyBtn.textContent = kk==='potion' ? 'Mua' : (owned ? 'Đã sở hữu' : 'Mua');
+    if(owned && kk!=='potion'){ buyBtn.disabled=true; buyBtn.style.opacity=.5; }
+    buyBtn.onclick=()=>buy(kk, item);
+    card.appendChild(buyBtn);
+    grid.appendChild(card);
+  });
+}
+
+/* ---------------- DAILY MISSIONS ---------------- */
+const MISSION_POOL = [
+  {id:'kill10', desc:'Tiêu diệt 10 quái', target:10, type:'kill', reward:{gold:80}},
+  {id:'kill30', desc:'Tiêu diệt 30 quái', target:30, type:'kill', reward:{gold:200}},
+  {id:'stage3', desc:'Hoàn thành 3 màn chơi', target:3, type:'stage', reward:{gold:150}},
+  {id:'ult5', desc:'Dùng chiêu Ultimate 5 lần', target:5, type:'ult', reward:{gold:100}},
+  {id:'dash10', desc:'Dùng Dash né 10 lần', target:10, type:'dash', reward:{gold:80}},
+  {id:'boss1', desc:'Đánh bại 1 Trùm', target:1, type:'boss', reward:{diamonds:5}},
+  {id:'gold500', desc:'Kiếm được 500 vàng', target:500, type:'goldEarn', reward:{gold:120}},
+];
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate(); }
+function rollDailyIfNeeded(){
+  if(SAVE.daily.date !== todayStr()){
+    const shuffled = [...MISSION_POOL].sort(()=>Math.random()-0.5).slice(0,4);
+    SAVE.daily = { date: todayStr(), missions: shuffled.map(m=>({...m, progress:0, claimed:false})), bigClaimed:false };
+    saveGame();
+  }
+}
+function progressMission(type, amount=1){
+  rollDailyIfNeeded();
+  let changed=false;
+  SAVE.daily.missions.forEach(m=>{
+    if(m.type===type && m.progress < m.target){ m.progress = Math.min(m.target, m.progress+amount); changed=true; }
+  });
+  if(changed) saveGame();
+}
+function openDaily(){ rollDailyIfNeeded(); showScreen('dailyScreen'); renderDaily(); }
+function renderDaily(){
+  const grid = document.getElementById('dailyGrid'); grid.innerHTML='';
+  SAVE.daily.missions.forEach((m,idx)=>{
+    const card=document.createElement('div'); card.className='card';
+    const done = m.progress>=m.target;
+    card.innerHTML = `<div style="display:flex; justify-content:space-between;">
+      <div>${m.desc}</div><div style="color:var(--dim)">${m.progress}/${m.target}</div></div>
+      <div class="barBG" style="margin-top:6px;"><div style="height:100%; width:${Math.min(100,m.progress/m.target*100)}%; background:var(--cyan);"></div></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+      <span style="font-size:.8em; color:${m.reward.diamonds?'var(--diamond)':'var(--gold)'}">${m.reward.diamonds?('💎 '+m.reward.diamonds):('💰 '+m.reward.gold)}</span>
+      <button class="btn small ${done && !m.claimed?'primary':''}" ${(!done||m.claimed)?'disabled':''} onclick="claimMission(${idx})">${m.claimed?'Đã nhận':'Nhận'}</button></div>`;
+    grid.appendChild(card);
+  });
+  const allDone = SAVE.daily.missions.every(m=>m.claimed);
+  document.getElementById('bigRewardText').textContent = 'Hoàn thành & nhận hết nhiệm vụ nhỏ để mở: 💰 500 + 💎 20';
+  document.getElementById('claimBigBtn').disabled = !allDone || SAVE.daily.bigClaimed;
+  document.getElementById('claimBigBtn').textContent = SAVE.daily.bigClaimed ? 'Đã nhận' : 'Nhận thưởng';
+}
+function claimMission(idx){
+  const m = SAVE.daily.missions[idx];
+  if(m.progress<m.target || m.claimed) return;
+  m.claimed = true;
+  SAVE.gold += m.reward.gold||0; SAVE.diamonds += m.reward.diamonds||0;
+  saveGame(); renderDaily(); toast('Nhận thưởng nhiệm vụ!');
+}
+function claimBigReward(){
+  if(!SAVE.daily.missions.every(m=>m.claimed) || SAVE.daily.bigClaimed) return;
+  SAVE.daily.bigClaimed = true; SAVE.gold += 500; SAVE.diamonds += 20;
+  saveGame(); renderDaily(); toast('Nhận phần thưởng lớn: 💰500 💎20!');
+}
+
+/* =====================================================================
+   GAME ENGINE
+   ===================================================================== */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+function resizeCanvas(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+let RUN = null; // current run state
+let keys = {};
+window.addEventListener('keydown', e=>{
+  keys[e.key.toLowerCase()] = true;
+  if(!RUN || RUN.paused) return;
+  if(e.key.toLowerCase()==='q') doUlt();
+  if(e.key.toLowerCase()==='e') doSkill();
+  if(e.key===' '||e.key==='Shift') doDash();
+  if(e.key==='Escape') pauseGame();
+});
+window.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()] = false; });
+
+let mouse = {x:0,y:0,down:false};
+canvas.addEventListener('mousemove', e=>{ mouse.x=e.clientX; mouse.y=e.clientY; });
+canvas.addEventListener('mousedown', e=>{ mouse.down=true; });
+window.addEventListener('mouseup', e=>{ mouse.down=false; });
+
+/* --- mobile joysticks --- */
+function setupStick(zoneId, stickId, onMove, onEnd){
+  const zone = document.getElementById(zoneId), stick = document.getElementById(stickId);
+  let active=false, cx=0, cy=0;
+  function start(t){ active=true; const r=zone.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; }
+  function move(t){
+    if(!active) return;
+    let dx=t.clientX-cx, dy=t.clientY-cy;
+    const max=40; const dist=Math.hypot(dx,dy);
+    if(dist>max){ dx=dx/dist*max; dy=dy/dist*max; }
+    stick.style.left = (38+dx)+'px'; stick.style.top=(38+dy)+'px';
+    onMove(dx/max, dy/max);
+  }
+  function end(){ active=false; stick.style.left='38px'; stick.style.top='38px'; onEnd && onEnd(); }
+  zone.addEventListener('touchstart', e=>{ start(e.touches[0]); move(e.touches[0]); e.preventDefault(); }, {passive:false});
+  zone.addEventListener('touchmove', e=>{ move(e.touches[0]); e.preventDefault(); }, {passive:false});
+  zone.addEventListener('touchend', e=>{ end(); });
+}
+let moveVec = {x:0,y:0};
+let aimVec = {x:1,y:0,active:false};
+setupStick('joystickZone','joyStick', (x,y)=>{ moveVec.x=x; moveVec.y=y; }, ()=>{ moveVec.x=0; moveVec.y=0; });
+setupStick('aimZone','aimStick', (x,y)=>{ if(Math.hypot(x,y)>0.2){ aimVec.x=x; aimVec.y=y; aimVec.active=true; } }, ()=>{ aimVec.active=false; });
+
+/* ---------------- WORLD / TERRAIN ---------------- */
+const WORLD_W = 1600, WORLD_H = 1000;
+function genTerrain(mapDef, stageIdx){
+  const rng = mulberry32(stageIdx*7919 + mapDef.id.charCodeAt(1)*104729);
+  const walls = [];
+  const cellSize = 90;
+  const cols = Math.floor(WORLD_W/cellSize), rows = Math.floor(WORLD_H/cellSize);
+  const safeRadius = 220; // keep spawn area clear
+  for(let cx=1; cx<cols-1; cx++){
+    for(let cy=1; cy<rows-1; cy++){
+      const wx = cx*cellSize + cellSize/2, wy = cy*cellSize+cellSize/2;
+      const dx = wx-WORLD_W/2, dy = wy-WORLD_H/2;
+      if(Math.hypot(dx,dy) < safeRadius) continue;
+      // sparse, structured placement so lanes always remain open
+      if(rng() < 0.14 && (cx%2===0 || cy%2===0)){
+        walls.push({x:wx-30, y:wy-30, w:60, h:60, deco:rng()<0.3});
+      }
+    }
+  }
+  return walls;
+}
+function rectsOverlap(a,b){ return a.x < b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y; }
+function circleRectCollide(cx,cy,r,rect){
+  const nx = Math.max(rect.x, Math.min(cx, rect.x+rect.w));
+  const ny = Math.max(rect.y, Math.min(cy, rect.y+rect.h));
+  return Math.hypot(cx-nx, cy-ny) < r;
+}
+
+/* ---------------- INIT RUN ---------------- */
+function initRun(mapId, stageNum){
+  const mapDef = MAP_DEFS.find(m=>m.id===mapId);
+  const isBoss = stageNum % 10 === 0;
+  const diffMul = 1 + (stageNum-1)*0.12 + (MAP_DEFS.findIndex(m=>m.id===mapId))*0.6;
+  const charDef = CHARACTERS.find(c=>c.id===SAVE.equip.char);
+  const weaponDef = WEAPONS.find(w=>w.id===SAVE.equip.weapon);
+
+  // consume potions (apply once, then clear)
+  let boostDmg=0, boostHp=0, boostSpeed=0, boostLife=0;
+  Object.keys(SAVE.ownedItems).forEach(id=>{
+    if(SAVE.ownedItems[id]>0){
+      const it = ITEMS.find(i=>i.id===id);
+      if(it && it.consumeNext){ /* not used, potions are consumed via applyPotion() explicitly */ }
+    }
+  });
+
+  const player = {
+    x: WORLD_W/2, y: WORLD_H/2, r:16,
+    hp: charDef.hp*(1+RUN_pendingBoost.hp), maxHp: charDef.hp*(1+RUN_pendingBoost.hp),
+    mp:0, maxMp:100,
+    speed: charDef.speed*(1+RUN_pendingBoost.speed),
+    dmg: charDef.dmg*(1+RUN_pendingBoost.dmg),
+    life: charDef.life/100 + RUN_pendingBoost.life,
+    facing:{x:1,y:0},
+    dashCd:0, dashDur:0, dashTime: charDef.id==='c1'?0.9:0.9,
+    skillCd:0, skillMaxCd: charDef.skillCd,
+    ultReady:false,
+    invuln:0, shield:0, speedBoostT:0, dmgBoostT:0,
+    fireT:0,
+    upgrades:{dmgMul:1, lifesteal:0, cdrMul:1},
+    charDef, weaponDef
+  };
+
+  RUN = {
+    mapId, mapDef, stageNum, isBoss, diffMul,
+    player,
+    enemies: [],
+    bullets: [],
+    enemyBullets: [],
+    pickups: [],
+    particles: [],
+    walls: genTerrain(mapDef, stageNum),
+    kills:0, killGoal: isBoss ? 1 : (6 + Math.floor(stageNum/2)),
+    time:0, paused:false, over:false,
+    goldEarned:0,
+    companion: null,
+    pets: [],
+    camera:{x:0,y:0},
+    lastPickupSpawn:0,
+    pickupSpawns: 1 + Math.floor(Math.random()*2), // 1-2 per stage
+  };
+  RUN_pendingBoost = {dmg:0,hp:0,speed:0,life:0};
+
+  if(SAVE.equip.comp){
+    const cd = COMPANIONS.find(c=>c.id===SAVE.equip.comp);
+    RUN.companion = {x:player.x-40,y:player.y, hp:cd.hp, maxHp:cd.hp, dmg:cd.dmg, heal:cd.heal||0, fireT:0, def:cd};
+  }
+  SAVE.equip.pets.forEach(pid=>{
+    const pd = PETS.find(p=>p.id===pid);
+    RUN.pets.push({angle:Math.random()*6.28, dmg:pd.dmg, rate:pd.rate||1.2, fireT:0, def:pd, poison:pd.poison, heal:pd.heal});
+  });
+
+  spawnWave();
+  document.getElementById('charNameHud').textContent = charDef.name;
+  updateHud();
+  lastTime = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+let RUN_pendingBoost = {dmg:0,hp:0,speed:0,life:0};
+
+/* ---------------- ENEMY SPAWN ---------------- */
+function spawnWave(){
+  const n = RUN.isBoss ? 1 : Math.min(12, 4 + Math.floor(RUN.stageNum/3));
+  for(let i=0;i<n;i++) spawnEnemy(RUN.isBoss);
+}
+function spawnEnemy(boss){
+  const rng = Math.random;
+  let ang = rng()*6.283, dist = 380+rng()*160;
+  let x = WORLD_W/2 + Math.cos(ang)*dist, y = WORLD_H/2 + Math.sin(ang)*dist;
+  x = Math.max(40, Math.min(WORLD_W-40, x)); y = Math.max(40, Math.min(WORLD_H-40, y));
+  const type = boss ? 'boss' : (rng()<0.5 ? 'melee' : 'ranged');
+  const baseHp = boss ? 260 : (type==='melee'?38:26);
+  const baseDmg = boss ? 16 : (type==='melee'?9:7);
+  const hp = baseHp * RUN.diffMul * (boss?1.6:1);
+  RUN.enemies.push({
+    x,y, r: boss?34:16, type,
+    hp, maxHp:hp, dmg: baseDmg*RUN.diffMul,
+    speed: (type==='melee'? 110: 90) * (boss?0.85:1),
+    fireT: rng()*1.2, meleeT:0,
+    state:'chase', color: RUN.mapDef.enemyColor,
+    boss: !!boss, phase:1,
+    knockX:0, knockY:0
+  });
+}
+
+/* ---------------- INPUT-DRIVEN ACTIONS ---------------- */
+function doDash(){
+  if(!RUN || RUN.paused || RUN.over) return;
+  const p = RUN.player;
+  if(p.dashCd>0) return;
+  p.dashTime = 0.22; p.dashCd = 1.6 * p.upgrades.cdrMul;
+  p.invuln = 0.22;
+  progressMission('dash',1);
+  spawnParticleBurst(p.x,p.y,'#39f6d0');
+}
+function doSkill(){
+  if(!RUN || RUN.paused || RUN.over) return;
+  const p = RUN.player;
+  if(p.skillCd>0) return;
+  p.skillCd = p.skillMaxCd * p.upgrades.cdrMul;
+  useCharacterSkill(p);
+}
+function doUlt(){
+  if(!RUN || RUN.paused || RUN.over) return;
+  const p = RUN.player;
+  if(p.mp < p.maxMp) { toast('Chưa đủ năng lượng!', 900); return; }
+  p.mp = 0;
+  progressMission('ult',1);
+  // Ultimate: energy cannon — big line damage in facing direction
+  const ang = Math.atan2(p.facing.y, p.facing.x);
+  const len = 900;
+  RUN.enemies.forEach(en=>{
+    const ex = en.x-p.x, ey = en.y-p.y;
+    const proj = ex*Math.cos(ang)+ey*Math.sin(ang);
+    const perp = Math.abs(-ex*Math.sin(ang)+ey*Math.cos(ang));
+    if(proj>0 && proj<len && perp<60){
+      damageEnemy(en, p.dmg*3.5*p.upgrades.dmgMul);
+    }
+  });
+  spawnParticleBurst(p.x+Math.cos(ang)*200, p.y+Math.sin(ang)*200, '#ff2fa0', 30);
+}
+function useCharacterSkill(p){
+  const id = p.charDef.id;
+  const ang = Math.atan2(p.facing.y,p.facing.x);
+  if(id==='c1'){ // pierce shot
+    RUN.bullets.push(makeBullet(p, ang, p.dmg*2, 12, {pierce:5}));
+  } else if(id==='c2'){ // invis + crit next
+    p.invuln = 2; p.critNext = true; toast('Ẩn thân!',900);
+  } else if(id==='c3'){ // shield block
+    p.shield = 3;
+  } else if(id==='c4'){ // attack speed
+    p.speedBoostT = 4; p.fireRateBoost = 4;
+  } else if(id==='c5'){ // AOE around
+    RUN.enemies.forEach(en=>{ if(Math.hypot(en.x-p.x,en.y-p.y)<160) damageEnemy(en, p.dmg*2.2*p.upgrades.dmgMul); });
+    spawnParticleBurst(p.x,p.y,'#a24bff',26);
+  } else if(id==='c6'){ // poison field
+    RUN.enemies.forEach(en=>{ if(Math.hypot(en.x-p.x,en.y-p.y)<180) en.poisonT = 4; });
+  } else if(id==='c7'){ // chain lightning
+    const sorted = [...RUN.enemies].sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y)).slice(0,3);
+    sorted.forEach(en=> damageEnemy(en, p.dmg*1.8*p.upgrades.dmgMul));
+  } else if(id==='c8'){ // heal
+    p.hp = Math.min(p.maxHp, p.hp + p.maxHp*0.3);
+  }
+}
+function makeBullet(p, ang, dmg, speed, opts={}){
+  return {x:p.x+Math.cos(ang)*20, y:p.y+Math.sin(ang)*20, vx:Math.cos(ang)*speed*10, vy:Math.sin(ang)*speed*10,
+    dmg, r:5, life:1.4, pierce:opts.pierce||0, splash:opts.splash||0, slow:opts.slow||false, owner:'player'};
+}
+
+/* ---------------- UPDATE LOOP ---------------- */
+let lastTime = 0;
+function gameLoop(now){
+  if(!RUN) return;
+  const dt = Math.min(0.05, (now-lastTime)/1000); lastTime = now;
+  if(!RUN.paused && !RUN.over){ update(dt); }
+  render();
+  requestAnimationFrame(gameLoop);
+}
+
+function update(dt){
+  RUN.time += dt;
+  const p = RUN.player;
+
+  // cooldown ticks
+  p.dashCd = Math.max(0,p.dashCd-dt);
+  p.skillCd = Math.max(0,p.skillCd-dt);
+  p.invuln = Math.max(0,p.invuln-dt);
+  p.shield = Math.max(0,p.shield-dt);
+  p.speedBoostT = Math.max(0,p.speedBoostT-dt);
+  p.dmgBoostT = Math.max(0,p.dmgBoostT-dt);
+  if(p.fireRateBoost) p.fireRateBoost = Math.max(0,p.fireRateBoost-dt);
+  p.fireT = Math.max(0, p.fireT-dt);
+  p.mp = Math.min(p.maxMp, p.mp + dt*7);
+
+  // movement
+  let mx=0,my=0;
+  if(keys['w']||keys['arrowup']) my-=1;
+  if(keys['s']||keys['arrowdown']) my+=1;
+  if(keys['a']||keys['arrowleft']) mx-=1;
+  if(keys['d']||keys['arrowright']) mx+=1;
+  if(mx===0&&my===0 && (moveVec.x||moveVec.y)){ mx=moveVec.x; my=moveVec.y; }
+  const mlen = Math.hypot(mx,my);
+  if(mlen>0){ mx/=mlen; my/=mlen; }
+  let curSpeed = p.speed * (p.dashTime>0?3.2:1) * (p.speedBoostT>0?1.5:1);
+  let nx = p.x + mx*curSpeed*dt, ny = p.y + my*curSpeed*dt;
+  nx = Math.max(20, Math.min(WORLD_W-20, nx)); ny = Math.max(20, Math.min(WORLD_H-20, ny));
+  // wall collision (simple resolve)
+  let blocked=false;
+  for(const w of RUN.walls){ if(circleRectCollide(nx,ny,p.r,w)){ blocked=true; break; } }
+  if(!blocked){ p.x=nx; p.y=ny; } else {
+    // try sliding on each axis
+    let nx2=p.x+mx*curSpeed*dt, ny2=p.y;
+    let bl2=false; for(const w of RUN.walls) if(circleRectCollide(nx2,ny2,p.r,w)){bl2=true;break;}
+    if(!bl2) p.x = Math.max(20,Math.min(WORLD_W-20,nx2));
+    let nx3=p.x, ny3=p.y+my*curSpeed*dt;
+    let bl3=false; for(const w of RUN.walls) if(circleRectCollide(nx3,ny3,p.r,w)){bl3=true;break;}
+    if(!bl3) p.y = Math.max(20,Math.min(WORLD_H-20,ny3));
+  }
+  p.dashTime = Math.max(0,p.dashTime-dt);
+
+  // aiming
+  let aimX, aimY;
+  if(aimVec.active){ aimX = p.x+aimVec.x*200; aimY = p.y+aimVec.y*200; }
+  else { aimX = mouse.x + RUN.camera.x; aimY = mouse.y + RUN.camera.y; }
+  const aimAng = Math.atan2(aimY-p.y, aimX-p.x);
+  p.facing = {x:Math.cos(aimAng), y:Math.sin(aimAng)};
+
+  // shooting
+  const wantFire = mouse.down || aimVec.active;
+  if(wantFire && p.fireT<=0){
+    const wd = p.weaponDef;
+    const rate = wd.rate / (p.fireRateBoost>0?1.6:1);
+    p.fireT = rate;
+    const pellets = wd.pellets||1;
+    for(let i=0;i<pellets;i++){
+      const spread = (Math.random()-0.5)*wd.spread*2 + (pellets>1?(Math.random()-0.5)*wd.spread*2:0);
+      const b = makeBullet(p, aimAng+spread, wd.dmg*p.dmg*0.11*p.upgrades.dmgMul*(p.dmgBoostT>0?1.5:1), wd.bulletSpeed/10, {pierce:wd.pierce||0, splash:wd.splash||0, slow:wd.slow});
+      RUN.bullets.push(b);
+    }
+  }
+
+  updateBullets(dt);
+  updateEnemies(dt);
+  updateCompanionAndPets(dt);
+  updatePickups(dt);
+  updateParticles(dt);
+
+  // camera follows player, clamped
+  const vw = canvas.width, vh = canvas.height;
+  RUN.camera.x = Math.max(0, Math.min(WORLD_W-vw, p.x-vw/2));
+  RUN.camera.y = Math.max(0, Math.min(WORLD_H-vh, p.y-vh/2));
+
+  // random pickup spawn
+  if(RUN.pickupSpawns>0 && RUN.time - RUN.lastPickupSpawn > 6 && Math.random()<0.02){
+    spawnPickup(); RUN.lastPickupSpawn = RUN.time; RUN.pickupSpawns--;
+  }
+
+  // player death
+  if(p.hp<=0 && !RUN.over){ endRun(false); }
+
+  updateHud();
+}
+
+function updateBullets(dt){
+  RUN.bullets = RUN.bullets.filter(b=>{
+    b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt;
+    if(b.life<=0) return false;
+    for(const w of RUN.walls){ if(circleRectCollide(b.x,b.y,b.r,w)) return false; }
+    for(const en of RUN.enemies){
+      if(Math.hypot(en.x-b.x,en.y-b.y) < en.r+b.r){
+        let dmg = b.dmg;
+        if(RUN.player.critNext){ dmg*=2.5; RUN.player.critNext=false; }
+        damageEnemy(en, dmg);
+        if(RUN.player.upgrades.lifesteal>0){ RUN.player.hp = Math.min(RUN.player.maxHp, RUN.player.hp + dmg*RUN.player.upgrades.lifesteal); }
+        if(RUN.player.life>0){ RUN.player.hp = Math.min(RUN.player.maxHp, RUN.player.hp + dmg*RUN.player.life); }
+        if(b.splash>0){ RUN.enemies.forEach(e2=>{ if(e2!==en && Math.hypot(e2.x-en.x,e2.y-en.y)<b.splash) damageEnemy(e2, dmg*0.5); }); }
+        if(b.pierce>0){ b.pierce--; } else { return false; }
+      }
+    }
+    return b.x>-50 && b.x<WORLD_W+50 && b.y>-50 && b.y<WORLD_H+50;
+  });
+  RUN.enemyBullets = RUN.enemyBullets.filter(b=>{
+    b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt;
+    if(b.life<=0) return false;
+    for(const w of RUN.walls){ if(circleRectCollide(b.x,b.y,b.r,w)) return false; }
+    const p = RUN.player;
+    if(p.invuln<=0 && p.shield<=0 && Math.hypot(p.x-b.x,p.y-b.y) < p.r+b.r){
+      p.hp -= b.dmg; spawnParticleBurst(p.x,p.y,'#ff4d5e',8);
+      return false;
+    }
+    return true;
+  });
+}
+
+function damageEnemy(en, dmg){
+  en.hp -= dmg; en.hitFlash = 0.1;
+  spawnParticleBurst(en.x,en.y,'#fff',4);
+  if(en.hp<=0 && !en.dead){
+    en.dead = true;
+    RUN.kills++;
+    const goldDrop = Math.floor((en.boss? 60+Math.random()*80 : 4+Math.random()*8) * (1+RUN.stageNum*0.05));
+    RUN.goldEarned += goldDrop; SAVE.gold += goldDrop;
+    progressMission('goldEarn', goldDrop);
+    progressMission('kill',1);
+    if(en.boss){
+      const dia = 3+Math.floor(Math.random()*5);
+      SAVE.diamonds += dia; toast(`Trùm rơi ra 💎${dia}!`, 1600);
+      progressMission('boss',1);
+    }
+    saveGame();
+    RUN.enemies = RUN.enemies.filter(e=>e!==en);
+    if(RUN.enemies.length===0 && RUN.kills < RUN.killGoal){ spawnWave(); }
+    if(RUN.kills >= RUN.killGoal && RUN.enemies.length===0){ endRun(true); }
+  }
+}
+
+function updateEnemies(dt){
+  const p = RUN.player;
+  RUN.enemies.forEach(en=>{
+    if(en.hitFlash>0) en.hitFlash -= dt;
+    if(en.poisonT>0){ en.poisonT-=dt; en.hp -= 8*dt; }
+    const dx=p.x-en.x, dy=p.y-en.y, dist=Math.hypot(dx,dy)||1;
+    const dirx=dx/dist, diry=dy/dist;
+    if(en.type==='melee' || en.boss){
+      // approach & swing
+      if(dist>50){ en.x += dirx*en.speed*dt; en.y += diry*en.speed*dt; }
+      en.meleeT -= dt;
+      if(dist<=54 && en.meleeT<=0){
+        en.meleeT = en.boss?1.1:0.9;
+        if(p.invuln<=0 && p.shield<=0){ p.hp -= en.dmg; spawnParticleBurst(p.x,p.y,'#ff4d5e',8); }
+      }
+      if(en.boss && en.fireT<=0 && dist<500){
+        // boss also lobs projectiles occasionally
+        en.fireT = 1.4;
+        const ang = Math.atan2(diry,dirx);
+        RUN.enemyBullets.push({x:en.x,y:en.y, vx:Math.cos(ang)*260,vy:Math.sin(ang)*260, dmg:en.dmg*0.7, r:7, life:3});
+      } else if(en.boss){ en.fireT -= dt; }
+    } else if(en.type==='ranged'){
+      const ideal = 260;
+      if(dist < ideal-30){ en.x -= dirx*en.speed*dt; en.y -= diry*en.speed*dt; }
+      else if(dist > ideal+30){ en.x += dirx*en.speed*dt; en.y += diry*en.speed*dt; }
+      en.fireT -= dt;
+      if(en.fireT<=0 && dist<560){
+        en.fireT = 1.5 / RUN.diffMul * 0.9;
+        // predictive lead shot
+        const pvx = (mx_last!==undefined)?0:0;
+        const leadX = p.x, leadY = p.y; // simple lead using current velocity estimation
+        const predT = dist/380;
+        const px = p.x + (p._vx||0)*predT, py = p.y + (p._vy||0)*predT;
+        const ang = Math.atan2(py-en.y, px-en.x);
+        RUN.enemyBullets.push({x:en.x,y:en.y, vx:Math.cos(ang)*380, vy:Math.sin(ang)*380, dmg:en.dmg, r:6, life:2.4});
+      }
+    }
+    // keep in bounds
+    en.x = Math.max(20,Math.min(WORLD_W-20,en.x));
+    en.y = Math.max(20,Math.min(WORLD_H-20,en.y));
+  });
+  // track player velocity for enemy prediction
+  p._vx = (p.x - (p._lastX??p.x))/dt; p._vy = (p.y - (p._lastY??p.y))/dt;
+  p._lastX = p.x; p._lastY = p.y;
+}
+
+function updateCompanionAndPets(dt){
+  const p = RUN.player;
+  if(RUN.companion){
+    const c = RUN.companion;
+    const dx=p.x-c.x, dy=p.y-c.y, dist=Math.hypot(dx,dy);
+    if(dist>60){ c.x += dx/dist*p.speed*0.9*dt; c.y += dy/dist*p.speed*0.9*dt; }
+    c.fireT -= dt;
+    const target = RUN.enemies[0];
+    if(target && c.fireT<=0 && Math.hypot(target.x-c.x,target.y-c.y)<400){
+      c.fireT = 0.8;
+      const ang = Math.atan2(target.y-c.y, target.x-c.x);
+      RUN.bullets.push({x:c.x,y:c.y, vx:Math.cos(ang)*700,vy:Math.sin(ang)*700, dmg:c.dmg, r:4, life:1.2, owner:'ally'});
+    }
+    if(c.heal){ p.hp = Math.min(p.maxHp, p.hp + c.heal*dt); }
+  }
+  RUN.pets.forEach(pet=>{
+    pet.angle += dt*1.2;
+    pet.fireT -= dt;
+    const target = RUN.enemies.reduce((best,e)=>{
+      const d = Math.hypot(e.x-p.x,e.y-p.y);
+      return (!best || d<best.d) ? {e,d} : best;
+    }, null);
+    if(target && pet.fireT<=0 && target.d<420 && pet.dmg>0){
+      pet.fireT = pet.rate;
+      const ang = Math.atan2(target.e.y-p.y, target.e.x-p.x);
+      RUN.bullets.push({x:p.x+Math.cos(pet.angle)*40, y:p.y+Math.sin(pet.angle)*40, vx:Math.cos(ang)*620,vy:Math.sin(ang)*620, dmg:pet.dmg, r:4, life:1, owner:'ally'});
+    }
+    if(pet.heal){ p.hp = Math.min(p.maxHp, p.hp + pet.heal*dt*0.3); }
+  });
+}
+
+function spawnPickup(){
+  const types = ['shield','speed','damage'];
+  const t = types[Math.floor(Math.random()*types.length)];
+  let x,y,tries=0;
+  do{ x=60+Math.random()*(WORLD_W-120); y=60+Math.random()*(WORLD_H-120); tries++; }
+  while(tries<20 && RUN.walls.some(w=>circleRectCollide(x,y,20,w)));
+  RUN.pickups.push({x,y,type:t,r:14,bob:0});
+}
+function updatePickups(dt){
+  const p = RUN.player;
+  RUN.pickups.forEach(pk=>pk.bob+=dt*3);
+  RUN.pickups = RUN.pickups.filter(pk=>{
+    if(Math.hypot(pk.x-p.x,pk.y-p.y) < pk.r+p.r){
+      if(pk.type==='shield'){ p.invuln = 5; toast('Nhặt Khiên — Bất tử 5s!',1300); }
+      if(pk.type==='speed'){ p.speedBoostT = 8; toast('Nhặt Tăng Tốc!',1300); }
+      if(pk.type==='damage'){ p.dmgBoostT = 8; toast('Nhặt Tăng Sát Thương!',1300); }
+      return false;
+    }
+    return true;
+  });
+}
+
+function spawnParticleBurst(x,y,color,n=6){
+  for(let i=0;i<n;i++){
+    const a = Math.random()*6.28, s=40+Math.random()*90;
+    RUN.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s, life:0.4+Math.random()*0.3, color});
+  }
+}
+function updateParticles(dt){
+  RUN.particles = RUN.particles.filter(pt=>{
+    pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.life-=dt; pt.vx*=0.9; pt.vy*=0.9;
+    return pt.life>0;
+  });
+}
+
+/* ---------------- HUD ---------------- */
+function updateHud(){
+  if(!RUN) return;
+  const p = RUN.player;
+  document.getElementById('hpFill').style.width = Math.max(0,p.hp/p.maxHp*100)+'%';
+  document.getElementById('mpFill').style.width = Math.max(0,p.mp/p.maxMp*100)+'%';
+  document.getElementById('stageInfo').innerHTML = `${RUN.mapDef.name} — Màn ${RUN.stageNum}${RUN.isBoss?' 👑 TRÙM':''}<br>Hạ gục: ${RUN.kills}/${RUN.killGoal} &nbsp; 💰${fmt(SAVE.gold)}`;
+  setCd('cdDash', p.dashCd, 1.6*p.upgrades.cdrMul);
+  setCd('cdSkill', p.skillCd, p.skillMaxCd*p.upgrades.cdrMul);
+  document.getElementById('cdUlt').classList.toggle('hidden', p.mp>=p.maxMp);
+  document.getElementById('cdUlt').textContent = p.mp<p.maxMp ? Math.ceil((p.maxMp-p.mp)/7) : '';
+}
+function setCd(id, cur, max){
+  const el = document.getElementById(id);
+  if(cur<=0){ el.classList.add('hidden'); } else { el.classList.remove('hidden'); el.textContent = cur.toFixed(1); }
+}
+
+/* ---------------- RENDER ---------------- */
+function render(){
+  if(!RUN) return;
+  const cam = RUN.camera;
+  ctx.fillStyle = RUN.mapDef.bg;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.translate(-cam.x,-cam.y);
+
+  // ground texture grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)'; ctx.lineWidth=1;
+  for(let gx=0; gx<WORLD_W; gx+=60){ ctx.beginPath(); ctx.moveTo(gx,0); ctx.lineTo(gx,WORLD_H); ctx.stroke(); }
+  for(let gy=0; gy<WORLD_H; gy+=60){ ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(WORLD_W,gy); ctx.stroke(); }
+
+  // walls
+  RUN.walls.forEach(w=>{
+    ctx.fillStyle = RUN.mapDef.wall;
+    ctx.fillRect(w.x,w.y,w.w,w.h);
+    ctx.strokeStyle = '#00000055'; ctx.strokeRect(w.x,w.y,w.w,w.h);
+    if(w.deco){ ctx.fillStyle = RUN.mapDef.deco; ctx.beginPath(); ctx.arc(w.x+30,w.y+30,10,0,6.28); ctx.fill(); }
+  });
+
+  // pickups
+  RUN.pickups.forEach(pk=>{
+    const bob = Math.sin(pk.bob)*4;
+    ctx.font='22px sans-serif'; ctx.textAlign='center';
+    const icon = pk.type==='shield'?'🛡️':pk.type==='speed'?'⚡':'🔥';
+    ctx.fillText(icon, pk.x, pk.y+bob);
+  });
+
+  // enemy bullets
+  ctx.fillStyle='#ff4d5e';
+  RUN.enemyBullets.forEach(b=>{ ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,6.28); ctx.fill(); });
+  // player bullets
+  RUN.bullets.forEach(b=>{ ctx.fillStyle = b.owner==='ally'?'#5fd0ff':'#39f6d0'; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,6.28); ctx.fill(); });
+
+  // enemies
+  RUN.enemies.forEach(en=>{
+    ctx.fillStyle = en.hitFlash>0 ? '#fff' : en.color;
+    ctx.beginPath(); ctx.arc(en.x,en.y,en.r,0,6.28); ctx.fill();
+    if(en.boss){ ctx.strokeStyle='#ff4d5e'; ctx.lineWidth=3; ctx.stroke(); }
+    // hp bar
+    ctx.fillStyle='#000a'; ctx.fillRect(en.x-en.r,en.y-en.r-10,en.r*2,5);
+    ctx.fillStyle= en.boss?'#ff4d5e':'#ffc94a'; ctx.fillRect(en.x-en.r,en.y-en.r-10,en.r*2*Math.max(0,en.hp/en.maxHp),5);
+  });
+
+  // companion
+  if(RUN.companion){ ctx.fillStyle='#5fd0ff'; ctx.beginPath(); ctx.arc(RUN.companion.x,RUN.companion.y,13,0,6.28); ctx.fill(); }
+
+  // player
+  const p = RUN.player;
+  ctx.save();
+  ctx.translate(p.x,p.y);
+  if(p.invuln>0) ctx.globalAlpha = 0.6 + Math.sin(RUN.time*20)*0.2;
+  ctx.fillStyle = p.charDef.color;
+  ctx.beginPath(); ctx.arc(0,0,p.r,0,6.28); ctx.fill();
+  ctx.strokeStyle='#000'; ctx.lineWidth=2; ctx.stroke();
+  // facing indicator
+  const ang = Math.atan2(p.facing.y,p.facing.x);
+  ctx.strokeStyle=p.charDef.color; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(Math.cos(ang)*p.r,Math.sin(ang)*p.r); ctx.lineTo(Math.cos(ang)*(p.r+14),Math.sin(ang)*(p.r+14)); ctx.stroke();
+  if(p.shield>0){ ctx.strokeStyle='#5fd0ff'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(0,0,p.r+8,0,6.28); ctx.stroke(); }
+  ctx.restore();
+
+  // particles
+  RUN.particles.forEach(pt=>{ ctx.globalAlpha=Math.max(0,pt.life); ctx.fillStyle=pt.color; ctx.beginPath(); ctx.arc(pt.x,pt.y,3,0,6.28); ctx.fill(); ctx.globalAlpha=1; });
+
+  ctx.restore();
+}
+
+/* ---------------- STAGE FLOW ---------------- */
+function endRun(win){
+  RUN.over = true;
+  if(win){
+    const mstate = SAVE.maps[RUN.mapId];
+    if(RUN.stageNum > mstate.furthest) mstate.furthest = RUN.stageNum;
+    if(RUN.stageNum % 5 === 0 && !mstate.checkpoints.includes(RUN.stageNum)) mstate.checkpoints.push(RUN.stageNum);
+    if(mstate.furthest >= STAGES_PER_MAP){
+      const idx = MAP_DEFS.findIndex(m=>m.id===RUN.mapId);
+      if(idx>=0 && idx+1 < MAP_DEFS.length){
+        const nextId = MAP_DEFS[idx+1].id;
+        if(!SAVE.maps[nextId].unlocked){ SAVE.maps[nextId].unlocked = true; toast('Đã mở khoá bản đồ mới!', 2200); }
+      }
+    }
+    progressMission('stage',1);
+    saveGame();
+    showScreen('upgradeScreen');
+    renderUpgradeCards();
+  } else {
+    document.getElementById('gameOverInfo').textContent = `${RUN.mapDef.name} — Màn ${RUN.stageNum} — Vàng thu được: ${fmt(RUN.goldEarned)}`;
+    showScreen('gameOverScreen');
+  }
+}
+function renderUpgradeCards(){
+  const opts = [
+    {name:'Tăng Sát Thương', desc:'+18% sát thương', apply:p=>p.upgrades.dmgMul*=1.18},
+    {name:'Hút Máu', desc:'+8% hút máu từ sát thương', apply:p=>p.upgrades.lifesteal+=0.08},
+    {name:'Giảm Hồi Chiêu', desc:'-15% thời gian hồi chiêu', apply:p=>p.upgrades.cdrMul*=0.85},
+  ].sort(()=>Math.random()-0.5);
+  const wrap = document.getElementById('upgradeCards'); wrap.innerHTML='';
+  opts.forEach(o=>{
+    const c = document.createElement('div'); c.className='uCard';
+    c.innerHTML = `<div style="font-weight:bold; color:var(--cyan);">${o.name}</div><div style="color:var(--dim); font-size:.85em; margin-top:6px;">${o.desc}</div>`;
+    c.onclick = ()=>{ o.apply(RUN.player); showScreen('stageClearScreen');
+      document.getElementById('stageClearInfo').textContent = `Vàng nhận được: 💰${fmt(RUN.goldEarned)} — Sẵn sàng cho màn tiếp theo`;
+    };
+    wrap.appendChild(c);
+  });
+}
+function continueAfterClear(){
+  showScreen('mapScreen'); renderMapScreen(); RUN = null;
+}
+function retryStage(){
+  const map = RUN.mapId, stage = RUN.stageNum;
+  showScreen('gameScreen');
+  initRun(map, stage);
+}
+function pauseGame(){ if(!RUN||RUN.over) return; RUN.paused = true; showScreen('pauseScreen'); }
+function resumeGame(){ RUN.paused = false; showScreen('gameScreen'); lastTime = performance.now(); }
+function quitToMenu(){ RUN=null; showScreen('mainMenu'); refreshCurrencyDisplays(); document.getElementById('goldMenu').textContent=fmt(SAVE.gold); document.getElementById('diaMenu').textContent=fmt(SAVE.diamonds); }
+
+/* apply potions button hook (used from shop item usage in loadout - simplified: auto consumed at run start if owned) */
+(function autoApplyPotionsPatch(){
+  const origInit = initRun;
+})();
+</script>
+</body>
+</html>
